@@ -1,0 +1,56 @@
+{
+  "spec_version": 1,
+  "name": "dungeon",
+  "seed": 1337,
+  "tile_size": 32,
+  "switches": { "cracks": true, "flagstones": true, "moss": false },
+  "tiles": [
+    {
+      "name": "stone_floor",
+      "kind": "floor",
+      "variants": 4,
+      "ramp": "stone",
+      "tags": ["walkable"],
+      "layers": [
+        { "type": "fill", "level": 0.5 },
+        { "type": "noise", "cells": 4, "octaves": 3, "strength": 0.3 },
+        { "type": "bricks", "rows": 2, "cols": 2, "mortar": 1, "offset": false, "mortar_level": -0.25, "variation": 0.1, "if": "flagstones" },
+        { "type": "speckle", "density": 0.04, "strength": 0.15 },
+        { "type": "cracks", "count": 2, "length": 12, "strength": 0.3, "if": "cracks" },
+        { "type": "scatter", "kind": "tufts", "count": 4, "strength": 0.25, "if": "moss" }
+      ]
+    },
+    {
+      "name": "stone_wall",
+      "kind": "wall",
+      "variants": 3,
+      "ramp": "stone",
+      "tags": ["solid"],
+      "wall": { "face": 0.65, "cap_lift": 0.18, "face_shadow": 0.25, "lip": true },
+      "layers": [
+        { "type": "fill", "level": 0.45 },
+        { "type": "bricks", "rows": 4, "cols": 2, "mortar": 1, "offset": true, "region": "face" },
+        { "type": "noise", "cells": 3, "strength": 0.2 },
+        { "type": "noise", "cells": 6, "octaves": 2, "strength": 0.12, "region": "cap" },
+        { "type": "cracks", "count": 2, "length": 8, "strength": 0.3, "region": "face", "if": "cracks" },
+        { "type": "scatter", "kind": "tufts", "count": 5, "strength": 0.25, "region": "face", "if": "moss" }
+      ]
+    },
+    {
+      "name": "dirt_patch",
+      "kind": "floor",
+      "variants": 1,
+      "ramp": "dirt",
+      "edge_ramp": "stone",
+      "autotile": "blob47",
+      "edge": { "width": 3.0, "wobble": 0.6, "cutout": false },
+      "tags": ["walkable", "autotile"],
+      "layers": [
+        { "type": "fill", "level": 0.5 },
+        { "type": "noise", "cells": 4, "octaves": 3, "strength": 0.3 },
+        { "type": "speckle", "density": 0.06, "strength": 0.2 },
+        { "type": "scatter", "kind": "pebbles", "count": 3, "strength": 0.3, "size": 3 }
+      ]
+    }
+  ]
+}

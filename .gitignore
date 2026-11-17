@@ -1,0 +1,4 @@
+target/
+mkxelz-out/
+mkxelz-data/
+*.apk

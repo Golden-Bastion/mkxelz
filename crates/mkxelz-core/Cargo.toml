@@ -1,0 +1,11 @@
+[package]
+name = "mkxelz-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Deterministic procedural tile generator: JSON spec + switches + seed -> PNG atlas + metadata"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+png = "0.17"

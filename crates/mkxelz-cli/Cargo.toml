@@ -1,0 +1,13 @@
+[package]
+name = "mkxelz-cli"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Command line front end for mkxelz-core"
+
+[[bin]]
+name = "mkxelz"
+path = "src/main.rs"
+
+[dependencies]
+mkxelz-core = { path = "../mkxelz-core" }
