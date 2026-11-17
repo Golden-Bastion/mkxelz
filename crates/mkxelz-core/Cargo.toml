@@ -3,6 +3,9 @@ name = "mkxelz-core"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license = "Apache-2.0"
+authors = ["right-ward"]
+repository = "https://github.com/right-ward/mkxelz"
 description = "Deterministic procedural tile generator: JSON spec + switches + seed -> PNG atlas + metadata"
 
 [dependencies]

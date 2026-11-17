@@ -3,6 +3,9 @@ name = "mkxelz-cli"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license = "Apache-2.0"
+authors = ["right-ward"]
+repository = "https://github.com/right-ward/mkxelz"
 description = "Command line front end for mkxelz-core"
 
 [[bin]]
