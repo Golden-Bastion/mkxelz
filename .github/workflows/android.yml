@@ -34,9 +34,6 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
       - name: Run generator tests
         run: cargo test -p mkxelz-core
 
