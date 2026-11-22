@@ -48,7 +48,7 @@ jobs:
         run: cargo clippy -p mkxelz-core -p mkxelz-cli --all-targets -- -D warnings
 
   android:
-    name: Build Android arm64 APK
+    name: Build and sign Android arm64 APKs
     runs-on: ubuntu-latest
     needs: quality
     steps:
@@ -71,6 +71,52 @@ jobs:
       - name: Install cargo-apk
         run: cargo install cargo-apk --locked
 
+      - name: Prepare shared Android signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          source_keystore="$RUNNER_TEMP/source-signing.keystore"
+          signing_keystore="$RUNNER_TEMP/mkxelz-signing.p12"
+
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$source_keystore"
+          chmod 600 "$source_keystore"
+
+          # cargo-apk exposes the keystore path and store password, but not
+          # separate alias/key-password options. Repackage the selected key as
+          # a single-entry PKCS12 keystore using the store password for both.
+          keytool -importkeystore -noprompt \
+            -srckeystore "$source_keystore" \
+            -srcstorepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -srcalias "$ANDROID_KEY_ALIAS" \
+            -srckeypass "$ANDROID_KEY_PASSWORD" \
+            -destkeystore "$signing_keystore" \
+            -deststoretype PKCS12 \
+            -deststorepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -destkeypass "$ANDROID_KEYSTORE_PASSWORD" \
+            -destalias "$ANDROID_KEY_ALIAS"
+
+          chmod 600 "$signing_keystore"
+          keytool -list -keystore "$signing_keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+          echo "ANDROID_SIGNING_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
+          echo "CARGO_APK_DEV_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
+          echo "CARGO_APK_DEV_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "CARGO_APK_RELEASE_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
+          echo "CARGO_APK_RELEASE_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build debug APK
+        working-directory: crates/mkxelz-app
+        env:
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+        run: cargo apk build --lib
+
       - name: Build release APK
         working-directory: crates/mkxelz-app
         env:
@@ -78,22 +124,45 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
         run: cargo apk build --release --lib
 
-      - name: Locate APK
-        id: apk
+      - name: Verify APK signatures and shared identity
+        id: apks
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
-          APK_PATH="$(find crates/mkxelz-app/target -type f -name '*.apk' -print -quit)"
-          if [ -z "$APK_PATH" ]; then
-            echo "cargo-apk completed but no APK was found" >&2
+          set -euo pipefail
+          debug_apk="$(find crates/mkxelz-app/target/debug/apk -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          release_apk="$(find crates/mkxelz-app/target/release/apk -maxdepth 1 -type f -name '*.apk' -print -quit)"
+
+          if [ -z "$debug_apk" ] || [ -z "$release_apk" ]; then
+            echo "Expected both debug and release APKs, but one or both are missing" >&2
             exit 1
           fi
-          echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
-          echo "Built APK: $APK_PATH"
 
-      - name: Upload Android APK
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          apksigner="$build_tools/apksigner"
+
+          "$apksigner" verify --verbose --print-certs "$debug_apk"
+          "$apksigner" verify --verbose --print-certs "$release_apk"
+
+          debug_cert="$("$apksigner" verify --print-certs "$debug_apk" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')"
+          release_cert="$("$apksigner" verify --print-certs "$release_apk" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')"
+
+          if [ -z "$debug_cert" ] || [ "$debug_cert" != "$release_cert" ]; then
+            echo "Debug and release APKs do not have the same signing certificate" >&2
+            exit 1
+          fi
+
+          echo "Debug and release APKs use the same signing certificate."
+          echo "debug_path=$debug_apk" >> "$GITHUB_OUTPUT"
+          echo "release_path=$release_apk" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Android APKs
         uses: actions/upload-artifact@v7.0.1
         with:
           name: mkxelz-android-arm64
-          path: ${{ steps.apk.outputs.path }}
+          path: |
+            ${{ steps.apks.outputs.debug_path }}
+            ${{ steps.apks.outputs.release_path }}
           if-no-files-found: error
           retention-days: 3
 
@@ -105,7 +174,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Android APK
+      - name: Download Android APKs
         uses: actions/download-artifact@v8.0.1
         with:
           name: mkxelz-android-arm64
