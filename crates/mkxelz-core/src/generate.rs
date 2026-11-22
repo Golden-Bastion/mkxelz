@@ -160,9 +160,9 @@ pub fn generate(spec: &Spec) -> Result<Output> {
     let columns = if spec.columns > 0 {
         spec.columns
     } else {
-        n.min(8).max(1)
+        n.clamp(1, 8)
     };
-    let rows = (n + columns - 1) / columns;
+    let rows = n.div_ceil(columns);
     let pad = spec.padding;
     let step = size + pad;
     let mut atlas = Image::new(columns * step - pad, rows * step - pad);
