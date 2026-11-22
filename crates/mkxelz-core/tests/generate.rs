@@ -9,7 +9,10 @@ fn presets_generate() {
     for (name, _) in presets::PRESETS {
         let out = generate(&load(name)).expect("generates");
         assert!(!out.entries.is_empty());
-        assert_eq!(out.atlas.rgba.len(), (out.atlas.width * out.atlas.height * 4) as usize);
+        assert_eq!(
+            out.atlas.rgba.len(),
+            (out.atlas.width * out.atlas.height * 4) as usize
+        );
     }
 }
 
@@ -43,7 +46,11 @@ fn switches_change_output() {
 #[test]
 fn blob47_emits_47_cells_per_variant() {
     let out = generate(&load("dungeon")).unwrap();
-    let n = out.entries.iter().filter(|e| e.name == "dirt_patch").count();
+    let n = out
+        .entries
+        .iter()
+        .filter(|e| e.name == "dirt_patch")
+        .count();
     assert_eq!(n, 47);
 }
 

@@ -22,7 +22,11 @@ fn mask_for(mode: Autotile, raw: u8) -> Option<u8> {
 }
 
 fn pick_entry(out: &Output, ids: &[usize], mask: Option<u8>, hsh: u64) -> usize {
-    let cands: Vec<usize> = ids.iter().copied().filter(|&i| out.entries[i].mask == mask).collect();
+    let cands: Vec<usize> = ids
+        .iter()
+        .copied()
+        .filter(|&i| out.entries[i].mask == mask)
+        .collect();
     if cands.is_empty() {
         ids[0]
     } else {
@@ -61,15 +65,23 @@ pub fn compose_preview(out: &Output, cols: u32, rows: u32, seed: u64) -> Image {
             .map(|e| e.index as usize)
             .collect();
         if !ids.is_empty() {
-            groups.push(Group { kind: t.kind, autotile: t.autotile, ids });
+            groups.push(Group {
+                kind: t.kind,
+                autotile: t.autotile,
+                ids,
+            });
         }
     }
     if groups.is_empty() {
         return img;
     }
 
-    let floors: Vec<usize> = (0..groups.len()).filter(|&i| groups[i].kind == Kind::Floor).collect();
-    let walls: Vec<usize> = (0..groups.len()).filter(|&i| groups[i].kind == Kind::Wall).collect();
+    let floors: Vec<usize> = (0..groups.len())
+        .filter(|&i| groups[i].kind == Kind::Floor)
+        .collect();
+    let walls: Vec<usize> = (0..groups.len())
+        .filter(|&i| groups[i].kind == Kind::Wall)
+        .collect();
     let base = floors.first().copied().unwrap_or(0);
 
     let w = cols as usize;
@@ -80,7 +92,13 @@ pub fn compose_preview(out: &Output, cols: u32, rows: u32, seed: u64) -> Image {
         let s = hash_combine(seed, 100 + k as u64);
         for cy in 0..h {
             for cx in 0..w {
-                let n = fbm(s, (cx as f32 + 0.5) / w as f32, (cy as f32 + 0.5) / h as f32, 3, 2);
+                let n = fbm(
+                    s,
+                    (cx as f32 + 0.5) / w as f32,
+                    (cy as f32 + 0.5) / h as f32,
+                    3,
+                    2,
+                );
                 if n > 0.56 {
                     grid[cy * w + cx] = g;
                 }
