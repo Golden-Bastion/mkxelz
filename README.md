@@ -46,6 +46,12 @@ Check the cargo-apk README if flags differ in your version.
   put it in the `specs/` folder next to the exports, and load it from the Files tab.
 - Planned: Android share sheet export (needs JNI), so you do not have to dig into `Android/data`.
 
+## CI and releases
+
+GitHub Actions runs on pull requests and pushes to `main`. It checks formatting, tests the platform-independent generator, validates both bundled specs and presets, and runs Clippy on the generator and CLI crates. A separate Android job builds the release APK for `aarch64-linux-android` and uploads it as a workflow artifact.
+
+Pushing a version tag such as `v0.2.0` also publishes a GitHub Release containing that Android APK. The pipeline does not build or package a desktop application.
+
 ## Output
 
 `tiles.png`: one atlas, row-major, square cells of `tile_size` px, `padding` px apart (not at the outer edge).
