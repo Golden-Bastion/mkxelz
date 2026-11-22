@@ -58,7 +58,7 @@ jobs:
       - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v4.0.1
         with:
-          packages: ndk;27.2.12479018
+          packages: platform-tools;platforms;android-35;build-tools;35.0.0;ndk;27.2.12479018
 
       - name: Install Rust Android target
         uses: dtolnay/rust-toolchain@stable
