@@ -100,11 +100,11 @@ jobs:
             -destalias "$ANDROID_KEY_ALIAS"
 
           chmod 600 "$signing_keystore"
+          rm -f "$source_keystore"
           keytool -list -keystore "$signing_keystore" \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" \
             -alias "$ANDROID_KEY_ALIAS" >/dev/null
 
-          echo "ANDROID_SIGNING_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
           echo "CARGO_APK_DEV_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
           echo "CARGO_APK_DEV_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "CARGO_APK_RELEASE_KEYSTORE=$signing_keystore" >> "$GITHUB_ENV"
@@ -126,8 +126,6 @@ jobs:
 
       - name: Verify APK signatures and shared identity
         id: apks
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set -euo pipefail
           debug_apk="$(find crates/mkxelz-app/target/debug/apk -maxdepth 1 -type f -name '*.apk' -print -quit)"
