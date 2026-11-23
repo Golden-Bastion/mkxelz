@@ -128,10 +128,21 @@ pub fn generate(spec: &Spec) -> Result<Output> {
         };
 
         for variant in 0..tile.variants {
-            let tile_seed = hash_combine(hash_combine(spec.seed, hash_str(&tile.name)), variant as u64);
+            let tile_seed = hash_combine(
+                hash_combine(spec.seed, hash_str(&tile.name)),
+                variant as u64,
+            );
             let base = base_values(spec, tile, tile_seed);
             for mask in &masks {
-                let rgba = render_cell(size, &base, &ramp, edge_ramp.as_ref(), tile, *mask, tile_seed);
+                let rgba = render_cell(
+                    size,
+                    &base,
+                    &ramp,
+                    edge_ramp.as_ref(),
+                    tile,
+                    *mask,
+                    tile_seed,
+                );
                 let entry = Entry {
                     index: cells.len() as u32,
                     name: tile.name.clone(),
@@ -146,22 +157,36 @@ pub fn generate(spec: &Spec) -> Result<Output> {
     }
 
     let n = cells.len() as u32;
-    let columns = if spec.columns > 0 { spec.columns } else { n.min(8).max(1) };
-    let rows = (n + columns - 1) / columns;
+    let columns = if spec.columns > 0 {
+        spec.columns
+    } else {
+        n.clamp(1, 8)
+    };
+    let rows = n.div_ceil(columns);
     let pad = spec.padding;
     let step = size + pad;
     let mut atlas = Image::new(columns * step - pad, rows * step - pad);
 
     let mut entries = Vec::with_capacity(cells.len());
     for (entry, rgba) in cells {
-        let cell = Image { width: size, height: size, rgba };
+        let cell = Image {
+            width: size,
+            height: size,
+            rgba,
+        };
         let cx = (entry.index % columns) * step;
         let cy = (entry.index / columns) * step;
         atlas.blit_region(&cell, 0, 0, size, size, cx, cy, false);
         entries.push(entry);
     }
 
-    Ok(Output { spec: spec.clone(), atlas, entries, columns, rows })
+    Ok(Output {
+        spec: spec.clone(),
+        atlas,
+        entries,
+        columns,
+        rows,
+    })
 }
 
 fn wall_cap_height(size: u32, tile: &TileSpec) -> u32 {
@@ -233,7 +258,13 @@ fn render_cell(
     let mut wob = Vec::with_capacity(size as usize);
     for i in 0..size {
         let u = (i as f32 + 0.5) / size as f32;
-        wob.push(value_noise(seed ^ 0xED6E, u * wob_cells as f32, 0.37, wob_cells as i32, 1));
+        wob.push(value_noise(
+            seed ^ 0xED6E,
+            u * wob_cells as f32,
+            0.37,
+            wob_cells as i32,
+            1,
+        ));
     }
 
     let mut out = Vec::with_capacity((size * size * 4) as usize);
@@ -244,13 +275,18 @@ fn render_cell(
             if let Some(m) = mask {
                 let d = edge_distance(m, x, y, size);
                 if d < f32::MAX {
-                    let w = tile.edge.width * (1.0 + tile.edge.wobble * (wob[x as usize] + wob[y as usize] - 1.0));
+                    let w = tile.edge.width
+                        * (1.0 + tile.edge.wobble * (wob[x as usize] + wob[y as usize] - 1.0));
                     if d < w.max(0.0) {
                         in_edge = true;
                     }
                 }
             }
-            let used: &Ramp = if in_edge { edge_ramp.unwrap_or(ramp) } else { ramp };
+            let used: &Ramp = if in_edge {
+                edge_ramp.unwrap_or(ramp)
+            } else {
+                ramp
+            };
             if in_edge && edge_ramp.is_none() {
                 v += tile.edge.shade;
             }

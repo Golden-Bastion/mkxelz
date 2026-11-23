@@ -1,9 +1,9 @@
 use eframe::egui;
-use std::path::PathBuf;
 use mkxelz_core::color::builtin_names;
 use mkxelz_core::preview::compose_preview;
 use mkxelz_core::spec::{Autotile, Kind, Layer, LayerKind, RampRef, Region, ScatterKind};
 use mkxelz_core::{generate, presets, Image as CoreImage, Output, Spec};
+use std::path::PathBuf;
 
 #[derive(PartialEq, Clone, Copy)]
 enum Tab {
@@ -45,45 +45,68 @@ fn show_tex(ui: &mut egui::Ui, tex: &egui::TextureHandle) {
     let size = tex.size_vec2();
     let avail = ui.available_width();
     // Whole-number scaling keeps pixel art crisp; shrink only if it cannot fit.
-    let scale = if size.x > avail { avail / size.x } else { (avail / size.x).floor().max(1.0) };
+    let scale = if size.x > avail {
+        avail / size.x
+    } else {
+        (avail / size.x).floor().max(1.0)
+    };
     let sized = egui::load::SizedTexture::new(tex.id(), size);
     ui.add(egui::Image::new(sized).fit_to_exact_size(size * scale));
 }
 
-fn slider_f32(ui: &mut egui::Ui, v: &mut f32, range: std::ops::RangeInclusive<f32>, label: &str) -> bool {
+fn slider_f32(
+    ui: &mut egui::Ui,
+    v: &mut f32,
+    range: std::ops::RangeInclusive<f32>,
+    label: &str,
+) -> bool {
     ui.add(egui::Slider::new(v, range).text(label)).changed()
 }
 
-fn slider_u32(ui: &mut egui::Ui, v: &mut u32, range: std::ops::RangeInclusive<u32>, label: &str) -> bool {
+fn slider_u32(
+    ui: &mut egui::Ui,
+    v: &mut u32,
+    range: std::ops::RangeInclusive<u32>,
+    label: &str,
+) -> bool {
     ui.add(egui::Slider::new(v, range).text(label)).changed()
 }
 
-fn switch_picker(ui: &mut egui::Ui, label: &str, value: &mut Option<String>, names: &[String]) -> bool {
+fn switch_picker(
+    ui: &mut egui::Ui,
+    label: &str,
+    value: &mut Option<String>,
+    names: &[String],
+) -> bool {
     let mut changed = false;
     let current = value.clone().unwrap_or_else(|| "-".to_string());
-    egui::ComboBox::from_label(label).selected_text(current).show_ui(ui, |ui| {
-        if ui.selectable_label(value.is_none(), "-").clicked() {
-            *value = None;
-            changed = true;
-        }
-        for n in names {
-            let selected = value.as_deref() == Some(n.as_str());
-            if ui.selectable_label(selected, n.as_str()).clicked() {
-                *value = Some(n.clone());
+    egui::ComboBox::from_label(label)
+        .selected_text(current)
+        .show_ui(ui, |ui| {
+            if ui.selectable_label(value.is_none(), "-").clicked() {
+                *value = None;
                 changed = true;
             }
-        }
-    });
+            for n in names {
+                let selected = value.as_deref() == Some(n.as_str());
+                if ui.selectable_label(selected, n.as_str()).clicked() {
+                    *value = Some(n.clone());
+                    changed = true;
+                }
+            }
+        });
     changed
 }
 
 fn region_picker(ui: &mut egui::Ui, region: &mut Region) -> bool {
     let before = *region;
-    egui::ComboBox::from_label("region").selected_text(format!("{:?}", *region)).show_ui(ui, |ui| {
-        ui.selectable_value(region, Region::All, "All");
-        ui.selectable_value(region, Region::Cap, "Cap");
-        ui.selectable_value(region, Region::Face, "Face");
-    });
+    egui::ComboBox::from_label("region")
+        .selected_text(format!("{:?}", *region))
+        .show_ui(ui, |ui| {
+            ui.selectable_value(region, Region::All, "All");
+            ui.selectable_value(region, Region::Cap, "Cap");
+            ui.selectable_value(region, Region::Face, "Face");
+        });
     before != *region
 }
 
@@ -93,14 +116,16 @@ fn ramp_picker(ui: &mut egui::Ui, label: &str, ramp: &mut RampRef) -> bool {
         RampRef::Named(n) => n.clone(),
         RampRef::Colors(_) => "custom".to_string(),
     };
-    egui::ComboBox::from_label(label).selected_text(current.clone()).show_ui(ui, |ui| {
-        for n in builtin_names() {
-            if ui.selectable_label(current == n, n).clicked() {
-                *ramp = RampRef::Named(n.to_string());
-                changed = true;
+    egui::ComboBox::from_label(label)
+        .selected_text(current.clone())
+        .show_ui(ui, |ui| {
+            for n in builtin_names() {
+                if ui.selectable_label(current == n, n).clicked() {
+                    *ramp = RampRef::Named(n.to_string());
+                    changed = true;
+                }
             }
-        }
-    });
+        });
     changed
 }
 
@@ -111,28 +136,32 @@ fn opt_ramp_picker(ui: &mut egui::Ui, label: &str, ramp: &mut Option<RampRef>) -
         Some(RampRef::Colors(_)) => "custom".to_string(),
         None => "-".to_string(),
     };
-    egui::ComboBox::from_label(label).selected_text(current.clone()).show_ui(ui, |ui| {
-        if ui.selectable_label(ramp.is_none(), "-").clicked() {
-            *ramp = None;
-            changed = true;
-        }
-        for n in builtin_names() {
-            if ui.selectable_label(current == n, n).clicked() {
-                *ramp = Some(RampRef::Named(n.to_string()));
+    egui::ComboBox::from_label(label)
+        .selected_text(current.clone())
+        .show_ui(ui, |ui| {
+            if ui.selectable_label(ramp.is_none(), "-").clicked() {
+                *ramp = None;
                 changed = true;
             }
-        }
-    });
+            for n in builtin_names() {
+                if ui.selectable_label(current == n, n).clicked() {
+                    *ramp = Some(RampRef::Named(n.to_string()));
+                    changed = true;
+                }
+            }
+        });
     changed
 }
 
 fn autotile_picker(ui: &mut egui::Ui, mode: &mut Autotile) -> bool {
     let before = *mode;
-    egui::ComboBox::from_label("autotile").selected_text(format!("{:?}", *mode)).show_ui(ui, |ui| {
-        ui.selectable_value(mode, Autotile::Off, "Off");
-        ui.selectable_value(mode, Autotile::Edges16, "Edges16");
-        ui.selectable_value(mode, Autotile::Blob47, "Blob47");
-    });
+    egui::ComboBox::from_label("autotile")
+        .selected_text(format!("{:?}", *mode))
+        .show_ui(ui, |ui| {
+            ui.selectable_value(mode, Autotile::Off, "Off");
+            ui.selectable_value(mode, Autotile::Edges16, "Edges16");
+            ui.selectable_value(mode, Autotile::Blob47, "Blob47");
+        });
     before != *mode
 }
 
@@ -178,11 +207,13 @@ fn edit_layer(ui: &mut egui::Ui, layer: &mut Layer, switches: &[String]) -> bool
         }
         LayerKind::Scatter(p) => {
             let before = p.kind;
-            egui::ComboBox::from_label("kind").selected_text(format!("{:?}", p.kind)).show_ui(ui, |ui| {
-                ui.selectable_value(&mut p.kind, ScatterKind::Blades, "Blades");
-                ui.selectable_value(&mut p.kind, ScatterKind::Pebbles, "Pebbles");
-                ui.selectable_value(&mut p.kind, ScatterKind::Tufts, "Tufts");
-            });
+            egui::ComboBox::from_label("kind")
+                .selected_text(format!("{:?}", p.kind))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut p.kind, ScatterKind::Blades, "Blades");
+                    ui.selectable_value(&mut p.kind, ScatterKind::Pebbles, "Pebbles");
+                    ui.selectable_value(&mut p.kind, ScatterKind::Tufts, "Tufts");
+                });
             ch |= before != p.kind;
             ch |= slider_u32(ui, &mut p.count, 0..=64, "count");
             ch |= slider_u32(ui, &mut p.size, 1..=8, "size");
@@ -247,10 +278,21 @@ impl MkXelzApp {
         match generate(&self.spec) {
             Ok(out) => {
                 let atlas_img = color_image(&out.atlas);
-                self.atlas_tex = Some(ctx.load_texture("atlas", atlas_img, egui::TextureOptions::NEAREST));
-                let prev = compose_preview(&out, self.preview_cols, self.preview_rows, self.spec.seed);
-                self.preview_tex = Some(ctx.load_texture("preview", color_image(&prev), egui::TextureOptions::NEAREST));
-                self.status = format!("{} cells, atlas {}x{}", out.entries.len(), out.atlas.width, out.atlas.height);
+                self.atlas_tex =
+                    Some(ctx.load_texture("atlas", atlas_img, egui::TextureOptions::NEAREST));
+                let prev =
+                    compose_preview(&out, self.preview_cols, self.preview_rows, self.spec.seed);
+                self.preview_tex = Some(ctx.load_texture(
+                    "preview",
+                    color_image(&prev),
+                    egui::TextureOptions::NEAREST,
+                ));
+                self.status = format!(
+                    "{} cells, atlas {}x{}",
+                    out.entries.len(),
+                    out.atlas.width,
+                    out.atlas.height
+                );
                 self.output = Some(out);
             }
             Err(e) => {
@@ -321,14 +363,22 @@ impl MkXelzApp {
             .selected_text(self.spec.tile_size.to_string())
             .show_ui(ui, |ui| {
                 for s in [16u32, 24, 32, 48, 64] {
-                    if ui.selectable_value(&mut self.spec.tile_size, s, s.to_string()).changed() {
+                    if ui
+                        .selectable_value(&mut self.spec.tile_size, s, s.to_string())
+                        .changed()
+                    {
                         changed = true;
                     }
                 }
             });
 
         changed |= slider_u32(ui, &mut self.spec.padding, 0..=4, "atlas padding");
-        changed |= slider_u32(ui, &mut self.spec.columns, 0..=16, "atlas columns (0 = auto)");
+        changed |= slider_u32(
+            ui,
+            &mut self.spec.columns,
+            0..=16,
+            "atlas columns (0 = auto)",
+        );
 
         ui.separator();
         ui.heading("Switches");
@@ -385,7 +435,9 @@ impl MkXelzApp {
             changed |= slider_f32(ui, &mut tile.edge.width, 0.0..=8.0, "edge width");
             changed |= slider_f32(ui, &mut tile.edge.wobble, 0.0..=1.0, "edge wobble");
             changed |= slider_f32(ui, &mut tile.edge.shade, -0.6..=0.6, "edge shade");
-            changed |= ui.checkbox(&mut tile.edge.cutout, "edge cutout (transparent)").changed();
+            changed |= ui
+                .checkbox(&mut tile.edge.cutout, "edge cutout (transparent)")
+                .changed();
         }
         if tile.kind == Kind::Wall {
             changed |= slider_f32(ui, &mut tile.wall.face, 0.2..=0.85, "face height");
@@ -401,22 +453,24 @@ impl MkXelzApp {
         let count = tile.layers.len();
         for (i, layer) in tile.layers.iter_mut().enumerate() {
             let title = format!("{}. {}", i + 1, layer.kind.label());
-            egui::CollapsingHeader::new(title).id_salt((idx, i)).show(ui, |ui| {
-                ui.push_id((idx, i), |ui| {
-                    changed |= edit_layer(ui, layer, &switch_names);
-                    ui.horizontal(|ui| {
-                        if i > 0 && ui.button("Up").clicked() {
-                            action = Some((i, LayerAction::Up));
-                        }
-                        if i + 1 < count && ui.button("Down").clicked() {
-                            action = Some((i, LayerAction::Down));
-                        }
-                        if ui.button("Remove").clicked() {
-                            action = Some((i, LayerAction::Remove));
-                        }
+            egui::CollapsingHeader::new(title)
+                .id_salt((idx, i))
+                .show(ui, |ui| {
+                    ui.push_id((idx, i), |ui| {
+                        changed |= edit_layer(ui, layer, &switch_names);
+                        ui.horizontal(|ui| {
+                            if i > 0 && ui.button("Up").clicked() {
+                                action = Some((i, LayerAction::Up));
+                            }
+                            if i + 1 < count && ui.button("Down").clicked() {
+                                action = Some((i, LayerAction::Down));
+                            }
+                            if ui.button("Remove").clicked() {
+                                action = Some((i, LayerAction::Remove));
+                            }
+                        });
                     });
                 });
-            });
         }
 
         if let Some((i, act)) = action {
@@ -430,14 +484,21 @@ impl MkXelzApp {
             changed = true;
         }
 
-        egui::ComboBox::from_label("Add layer").selected_text("choose...").show_ui(ui, |ui| {
-            for kind in LayerKind::catalog() {
-                if ui.selectable_label(false, kind.label()).clicked() {
-                    tile.layers.push(Layer { when: None, unless: None, region: Region::All, kind });
-                    changed = true;
+        egui::ComboBox::from_label("Add layer")
+            .selected_text("choose...")
+            .show_ui(ui, |ui| {
+                for kind in LayerKind::catalog() {
+                    if ui.selectable_label(false, kind.label()).clicked() {
+                        tile.layers.push(Layer {
+                            when: None,
+                            unless: None,
+                            region: Region::All,
+                            kind,
+                        });
+                        changed = true;
+                    }
                 }
-            }
-        });
+            });
 
         if changed {
             self.dirty = true;
@@ -464,7 +525,11 @@ impl MkXelzApp {
         });
         let mut to_load: Option<PathBuf> = None;
         for p in &self.spec_files {
-            let label = p.file_name().and_then(|n| n.to_str()).unwrap_or("?").to_string();
+            let label = p
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("?")
+                .to_string();
             if ui.button(format!("Load {label}")).clicked() {
                 to_load = Some(p.clone());
             }
@@ -512,9 +577,19 @@ impl MkXelzApp {
             .spec
             .name
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
-        let dir = self.data_dir.join("export").join(if folder.is_empty() { "untitled".to_string() } else { folder });
+        let dir = self.data_dir.join("export").join(if folder.is_empty() {
+            "untitled".to_string()
+        } else {
+            folder
+        });
         self.status = match out.export(&dir) {
             Ok(files) => format!("Exported {} files to {}", files.len(), dir.display()),
             Err(e) => format!("Export failed: {e}"),
@@ -525,7 +600,12 @@ impl MkXelzApp {
         let dir = self.data_dir.join("specs");
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join(format!("{}.json", self.spec.name));
-        self.status = match self.spec.to_json().map_err(|e| e.to_string()).and_then(|j| std::fs::write(&path, j).map_err(|e| e.to_string())) {
+        self.status = match self
+            .spec
+            .to_json()
+            .map_err(|e| e.to_string())
+            .and_then(|j| std::fs::write(&path, j).map_err(|e| e.to_string()))
+        {
             Ok(()) => format!("Saved {}", path.display()),
             Err(e) => format!("Save failed: {e}"),
         };
@@ -561,12 +641,14 @@ impl eframe::App for MkXelzApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| match self.tab {
-                Tab::Preview => self.ui_preview(ui),
-                Tab::Controls => self.ui_controls(ui),
-                Tab::Layers => self.ui_layers(ui),
-                Tab::Files => self.ui_files(ui),
-            });
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| match self.tab {
+                    Tab::Preview => self.ui_preview(ui),
+                    Tab::Controls => self.ui_controls(ui),
+                    Tab::Layers => self.ui_layers(ui),
+                    Tab::Files => self.ui_files(ui),
+                });
         });
 
         if self.regen_requested || (self.dirty && self.auto) {

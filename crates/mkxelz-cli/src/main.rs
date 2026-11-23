@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use mkxelz_core::{generate, presets, Spec};
+use std::path::PathBuf;
 
 fn main() {
     if let Err(e) = run() {

@@ -15,7 +15,12 @@ pub struct Canvas {
 
 impl Canvas {
     pub fn new(size: u32, wall: bool, cap_h: u32) -> Self {
-        Canvas { size, wall, cap_h, val: vec![0.5; (size * size) as usize] }
+        Canvas {
+            size,
+            wall,
+            cap_h,
+            val: vec![0.5; (size * size) as usize],
+        }
     }
 
     fn region_ok(&self, region: Region, y: u32) -> bool {
@@ -46,7 +51,16 @@ impl Canvas {
     }
 }
 
-const DIRS: [(i32, i32); 8] = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)];
+const DIRS: [(i32, i32); 8] = [
+    (1, 0),
+    (1, 1),
+    (0, 1),
+    (-1, 1),
+    (-1, 0),
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+];
 
 pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
     let region = layer.region;
@@ -68,7 +82,12 @@ pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
                     let u = (x as f32 + 0.5) / sf;
                     let v = (y as f32 + 0.5) / sf;
                     let n = fbm(seed, u, v, p.cells, p.octaves.min(6));
-                    c.add(region, x as i32, y as i32, (n - 0.5) * 2.0 * p.strength + p.bias);
+                    c.add(
+                        region,
+                        x as i32,
+                        y as i32,
+                        (n - 0.5) * 2.0 * p.strength + p.bias,
+                    );
                 }
             }
         }
@@ -108,7 +127,11 @@ pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
         LayerKind::Bricks(p) => {
             let rows = p.rows.max(1);
             let cols = p.cols.max(1);
-            let (y0, h) = if region == Region::Face && c.wall { (c.cap_h, s - c.cap_h) } else { (0, s) };
+            let (y0, h) = if region == Region::Face && c.wall {
+                (c.cap_h, s - c.cap_h)
+            } else {
+                (0, s)
+            };
             let bh = h as f32 / rows as f32;
             let bw = sf / cols as f32;
             let m = p.mortar as f32;
@@ -117,7 +140,11 @@ pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
                     let ly_abs = (y - y0) as f32;
                     let row = ((ly_abs / bh).floor() as u32).min(rows - 1);
                     let ly = ly_abs - row as f32 * bh;
-                    let off = if p.offset && row % 2 == 1 { bw * 0.5 } else { 0.0 };
+                    let off = if p.offset && row % 2 == 1 {
+                        bw * 0.5
+                    } else {
+                        0.0
+                    };
                     let xf = (x as f32 + off).rem_euclid(sf);
                     let col = ((xf / bw).floor() as u32).min(cols - 1);
                     let lx = xf - col as f32 * bw;
@@ -151,7 +178,9 @@ pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
                 let y = rng.below(s) as i32;
                 match p.kind {
                     ScatterKind::Blades => {
-                        let h = ((sz.max(2) as f32) * (0.6 + 0.4 * rng.f32())).round().max(2.0) as i32;
+                        let h = ((sz.max(2) as f32) * (0.6 + 0.4 * rng.f32()))
+                            .round()
+                            .max(2.0) as i32;
                         for i in 0..h {
                             let d = if i == 0 {
                                 -0.5 * p.strength
@@ -166,7 +195,8 @@ pub fn apply(c: &mut Canvas, layer: &Layer, seed: u64) {
                         let h = (sz * 2 / 3).max(1);
                         for dy in 0..h {
                             for dx in 0..w {
-                                let corner = w > 2 && (dx == 0 || dx == w - 1) && (dy == 0 || dy == h - 1);
+                                let corner =
+                                    w > 2 && (dx == 0 || dx == w - 1) && (dy == 0 || dy == h - 1);
                                 if !corner {
                                     c.add(region, x + dx, y + dy, 0.4 * p.strength);
                                 }

@@ -3,7 +3,10 @@
 use crate::rng::{hash_combine, unit};
 
 fn lattice(seed: u64, x: i32, y: i32) -> f32 {
-    unit(hash_combine(hash_combine(seed, x as u32 as u64), y as u32 as u64))
+    unit(hash_combine(
+        hash_combine(seed, x as u32 as u64),
+        y as u32 as u64,
+    ))
 }
 
 fn smooth(t: f32) -> f32 {

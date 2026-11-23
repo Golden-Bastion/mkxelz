@@ -46,6 +46,28 @@ Check the cargo-apk README if flags differ in your version.
   put it in the `specs/` folder next to the exports, and load it from the Files tab.
 - Planned: Android share sheet export (needs JNI), so you do not have to dig into `Android/data`.
 
+## CI and releases
+
+GitHub Actions runs on pull requests and pushes to `main`. It checks formatting, tests the
+platform-independent generator, validates both bundled specs and presets, and runs Clippy on the
+generator and CLI crates. The Android job builds both debug and release APKs for
+`aarch64-linux-android`, verifies their signatures, and checks that both use the same signing
+certificate before uploading them as the `mkxelz-android-arm64` workflow artifact.
+
+Configure these GitHub Actions repository secrets for Android signing:
+
+- `ANDROID_KEYSTORE_BASE64`: Base64-encoded keystore file.
+- `ANDROID_KEYSTORE_PASSWORD`: Keystore password.
+- `ANDROID_KEY_ALIAS`: Alias of the signing key in the keystore.
+- `ANDROID_KEY_PASSWORD`: Password of that key.
+
+The workflow extracts the selected key into a temporary single-entry PKCS12 keystore because
+`cargo-apk` does not expose separate alias and key-password settings. The original keystore and
+derived signing keystore are kept only on the ephemeral runner and are not committed.
+
+Pushing a version tag such as `v0.2.0` also publishes a GitHub Release containing both Android APKs.
+The pipeline does not build or package a desktop application.
+
 ## Output
 
 `tiles.png`: one atlas, row-major, square cells of `tile_size` px, `padding` px apart (not at the outer edge).

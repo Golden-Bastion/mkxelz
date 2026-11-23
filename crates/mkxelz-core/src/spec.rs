@@ -80,14 +80,20 @@ impl Spec {
                 return Err(Error::Spec(format!("duplicate tile name '{}'", t.name)));
             }
             if !(1..=16).contains(&t.variants) {
-                return Err(Error::Spec(format!("tile '{}': variants must be 1..=16", t.name)));
+                return Err(Error::Spec(format!(
+                    "tile '{}': variants must be 1..=16",
+                    t.name
+                )));
             }
             t.ramp.resolve()?;
             if let Some(r) = &t.edge_ramp {
                 r.resolve()?;
             }
             if !(0.1..=0.9).contains(&t.wall.face) {
-                return Err(Error::Spec(format!("tile '{}': wall.face must be 0.1..=0.9", t.name)));
+                return Err(Error::Spec(format!(
+                    "tile '{}': wall.face must be 0.1..=0.9",
+                    t.name
+                )));
             }
             if self.gate(&t.when, &t.unless) {
                 total += t.variants * t.autotile.mask_count();
@@ -97,7 +103,9 @@ impl Spec {
             return Err(Error::Spec("no tiles enabled".into()));
         }
         if total > 2048 {
-            return Err(Error::Spec(format!("too many cells ({total}); limit is 2048")));
+            return Err(Error::Spec(format!(
+                "too many cells ({total}); limit is 2048"
+            )));
         }
         Ok(())
     }
@@ -187,7 +195,13 @@ pub struct EdgeSpec {
 
 impl Default for EdgeSpec {
     fn default() -> Self {
-        EdgeSpec { width: 3.0, wobble: 0.5, shade: -0.2, cells: 4, cutout: false }
+        EdgeSpec {
+            width: 3.0,
+            wobble: 0.5,
+            shade: -0.2,
+            cells: 4,
+            cutout: false,
+        }
     }
 }
 
@@ -204,7 +218,12 @@ pub struct WallSpec {
 
 impl Default for WallSpec {
     fn default() -> Self {
-        WallSpec { face: 0.6, cap_lift: 0.2, face_shadow: 0.25, lip: true }
+        WallSpec {
+            face: 0.6,
+            cap_lift: 0.2,
+            face_shadow: 0.25,
+            lip: true,
+        }
     }
 }
 
@@ -336,7 +355,12 @@ pub struct NoiseParams {
 }
 impl Default for NoiseParams {
     fn default() -> Self {
-        NoiseParams { cells: 4, octaves: 3, strength: 0.3, bias: 0.0 }
+        NoiseParams {
+            cells: 4,
+            octaves: 3,
+            strength: 0.3,
+            bias: 0.0,
+        }
     }
 }
 
@@ -350,7 +374,11 @@ pub struct SpeckleParams {
 }
 impl Default for SpeckleParams {
     fn default() -> Self {
-        SpeckleParams { density: 0.05, strength: 0.2, light: 0.5 }
+        SpeckleParams {
+            density: 0.05,
+            strength: 0.2,
+            light: 0.5,
+        }
     }
 }
 
@@ -364,7 +392,12 @@ pub struct CracksParams {
 }
 impl Default for CracksParams {
     fn default() -> Self {
-        CracksParams { count: 3, length: 10, strength: 0.3, branch: 0.15 }
+        CracksParams {
+            count: 3,
+            length: 10,
+            strength: 0.3,
+            branch: 0.15,
+        }
     }
 }
 
@@ -380,7 +413,14 @@ pub struct BricksParams {
 }
 impl Default for BricksParams {
     fn default() -> Self {
-        BricksParams { rows: 4, cols: 2, mortar: 1, offset: true, mortar_level: -0.3, variation: 0.12 }
+        BricksParams {
+            rows: 4,
+            cols: 2,
+            mortar: 1,
+            offset: true,
+            mortar_level: -0.3,
+            variation: 0.12,
+        }
     }
 }
 
@@ -394,7 +434,12 @@ pub struct GrainParams {
 }
 impl Default for GrainParams {
     fn default() -> Self {
-        GrainParams { vertical: false, cells: 3, stretch: 6, strength: 0.2 }
+        GrainParams {
+            vertical: false,
+            cells: 3,
+            stretch: 6,
+            strength: 0.2,
+        }
     }
 }
 
@@ -417,7 +462,12 @@ pub struct ScatterParams {
 }
 impl Default for ScatterParams {
     fn default() -> Self {
-        ScatterParams { kind: ScatterKind::Blades, count: 12, strength: 0.3, size: 3 }
+        ScatterParams {
+            kind: ScatterKind::Blades,
+            count: 12,
+            strength: 0.3,
+            size: 3,
+        }
     }
 }
 
@@ -429,6 +479,9 @@ pub struct EdgeShadeParams {
 }
 impl Default for EdgeShadeParams {
     fn default() -> Self {
-        EdgeShadeParams { width: 1, amount: 0.2 }
+        EdgeShadeParams {
+            width: 1,
+            amount: 0.2,
+        }
     }
 }

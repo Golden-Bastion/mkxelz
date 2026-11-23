@@ -34,7 +34,8 @@ impl Image {
         for y in 0..h {
             for x in 0..w {
                 let (spx, spy, dpx, dpy) = (sx + x, sy + y, dx + x, dy + y);
-                if spx >= src.width || spy >= src.height || dpx >= self.width || dpy >= self.height {
+                if spx >= src.width || spy >= src.height || dpx >= self.width || dpy >= self.height
+                {
                     continue;
                 }
                 let si = ((spy * src.width + spx) * 4) as usize;
