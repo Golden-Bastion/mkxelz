@@ -143,8 +143,8 @@ jobs:
           "$apksigner" verify --verbose --print-certs "$debug_apk"
           "$apksigner" verify --verbose --print-certs "$release_apk"
 
-          debug_cert="$("$apksigner" verify --print-certs "$debug_apk" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')"
-          release_cert="$("$apksigner" verify --print-certs "$release_apk" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {print $2}')"
+          debug_cert="$("$apksigner" verify --print-certs "$debug_apk" | awk -F': ' '/certificate SHA-256 digest:/ {print $2; exit}')"
+          release_cert="$("$apksigner" verify --print-certs "$release_apk" | awk -F': ' '/certificate SHA-256 digest:/ {print $2; exit}')"
 
           if [ -z "$debug_cert" ] || [ "$debug_cert" != "$release_cert" ]; then
             echo "Debug and release APKs do not have the same signing certificate" >&2
